@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 Logan Bussell
 // SPDX-License-Identifier: MIT
 
+using System.Collections.Immutable;
 using System.Text;
 using CommandLineGenerator.Emitters;
 using CommandLineGenerator.Parsing;
@@ -23,21 +24,25 @@ public sealed class CommandLineGenerator : IIncrementalGenerator
         // Always generate the base infrastructure (attributes)
         context.RegisterPostInitializationOutput(static ctx =>
         {
-            ctx.AddSource("Attributes.g.cs", SourceText.From(AttributesEmitter.Emit(), Encoding.UTF8));
+            ctx.AddSource(
+                "Attributes.g.cs",
+                SourceText.From(AttributesEmitter.Emit(), Encoding.UTF8)
+            );
         });
 
         // Discover options types with [MapCommandLineOptions]
-        var optionsTypes = context
+        IncrementalValueProvider<ImmutableArray<OptionsTypeInfo?>> optionsTypes = context
             .SyntaxProvider.ForAttributeWithMetadataName(
                 AttributeNames.MapCommandLineOptions,
-                predicate: static (node, _) => node is RecordDeclarationSyntax or ClassDeclarationSyntax,
+                predicate: static (node, _) =>
+                    node is RecordDeclarationSyntax or ClassDeclarationSyntax,
                 transform: static (ctx, ct) => OptionsTypeParser.Parse(ctx, ct)
             )
             .Where(static o => o is not null)
             .Collect()!;
 
         // Discover command methods with [Command]
-        var commandMethods = context
+        IncrementalValueProvider<ImmutableArray<CommandMethodInfo?>> commandMethods = context
             .SyntaxProvider.ForAttributeWithMetadataName(
                 AttributeNames.Command,
                 predicate: static (node, _) => node is MethodDeclarationSyntax,
@@ -47,20 +52,25 @@ public sealed class CommandLineGenerator : IIncrementalGenerator
             .Collect()!;
 
         // Combine options types with command methods to generate ConsoleApp
-        var combined = commandMethods.Combine(optionsTypes);
+        IncrementalValueProvider<(ImmutableArray<CommandMethodInfo?> Left, ImmutableArray<OptionsTypeInfo?> Right)> combined = commandMethods.Combine(optionsTypes);
 
         context.RegisterSourceOutput(
             combined,
             static (spc, data) =>
             {
-                var commands = data.Left;
-                var options = data.Right;
-                var optionsDict = options.Where(o => o is not null).ToDictionary(o => o!.FullTypeName, o => o!);
+                ImmutableArray<CommandMethodInfo?> commands = data.Left;
+                ImmutableArray<OptionsTypeInfo?> options = data.Right;
+                Dictionary<string, OptionsTypeInfo> optionsDict = options
+                    .Where(o => o is not null)
+                    .ToDictionary(o => o!.FullTypeName, o => o!);
 
-                var consoleAppSource = ConsoleAppEmitter.Emit(commands!, optionsDict);
+                string? consoleAppSource = ConsoleAppEmitter.Emit(commands!, optionsDict);
                 if (consoleAppSource is not null)
                 {
-                    spc.AddSource("ConsoleApp.g.cs", SourceText.From(consoleAppSource, Encoding.UTF8));
+                    spc.AddSource(
+                        "ConsoleApp.g.cs",
+                        SourceText.From(consoleAppSource, Encoding.UTF8)
+                    );
                 }
             }
         );
@@ -70,20 +80,26 @@ public sealed class CommandLineGenerator : IIncrementalGenerator
             optionsTypes,
             static (spc, optionsTypes) =>
             {
-                foreach (var opt in optionsTypes)
+                foreach (OptionsTypeInfo? opt in optionsTypes)
                 {
                     if (opt is not null)
                     {
-                        var mapperSource = OptionsMapperEmitter.Emit(opt);
-                        spc.AddSource($"{opt.TypeName}Mapper.g.cs", SourceText.From(mapperSource, Encoding.UTF8));
+                        string mapperSource = OptionsMapperEmitter.Emit(opt);
+                        spc.AddSource(
+                            $"{opt.TypeName}Mapper.g.cs",
+                            SourceText.From(mapperSource, Encoding.UTF8)
+                        );
                     }
                 }
 
                 // Generate CommandExtensions with AddOptions<T>() for all options types
-                var extensionsSource = CommandExtensionsEmitter.Emit(optionsTypes);
+                string? extensionsSource = CommandExtensionsEmitter.Emit(optionsTypes);
                 if (extensionsSource is not null)
                 {
-                    spc.AddSource("CommandExtensions.g.cs", SourceText.From(extensionsSource, Encoding.UTF8));
+                    spc.AddSource(
+                        "CommandExtensions.g.cs",
+                        SourceText.From(extensionsSource, Encoding.UTF8)
+                    );
                 }
             }
         );

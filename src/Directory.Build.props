@@ -6,4 +6,8 @@
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     </PropertyGroup>
+    <ItemGroup Label="Formatting">
+        <!-- Formats code on Debug build and verifies on Release build -->
+        <PackageReference Include="CSharpier.MSBuild" PrivateAssets="all" />
+    </ItemGroup>
 </Project>

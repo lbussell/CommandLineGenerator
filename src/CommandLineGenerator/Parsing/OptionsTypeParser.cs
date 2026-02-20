@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 Logan Bussell
 // SPDX-License-Identifier: MIT
 
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -20,7 +19,7 @@ internal static class OptionsTypeParser
         if (ctx.TargetSymbol is not INamedTypeSymbol typeSymbol)
             return null;
 
-        var mapAttr = ctx.Attributes.FirstOrDefault(a =>
+        AttributeData? mapAttr = ctx.Attributes.FirstOrDefault(a =>
             a.AttributeClass?.ToDisplayString() == AttributeNames.MapCommandLineOptions
         );
 
@@ -28,15 +27,18 @@ internal static class OptionsTypeParser
             return null;
 
         // Check for UseKebabCase property
-        var useKebabCase = mapAttr.NamedArguments.FirstOrDefault(a => a.Key == "UseKebabCase").Value.Value is bool val
+        bool useKebabCase = mapAttr
+            .NamedArguments.FirstOrDefault(a => a.Key == "UseKebabCase")
+            .Value.Value
+            is bool val
             ? val
             : true;
 
         // Get members from primary constructor parameters (for records) or properties
-        var members = new List<OptionsMemberInfo>();
+        List<OptionsMemberInfo> members = [];
 
         // Check for primary constructor (records and classes with primary constructors)
-        var primaryCtor = typeSymbol.InstanceConstructors.FirstOrDefault(c =>
+        IMethodSymbol? primaryCtor = typeSymbol.InstanceConstructors.FirstOrDefault(c =>
             c.Parameters.Length > 0
             && c.DeclaringSyntaxReferences.Any(r =>
                 r.GetSyntax(ct) is RecordDeclarationSyntax or ClassDeclarationSyntax
@@ -45,50 +47,62 @@ internal static class OptionsTypeParser
 
         if (primaryCtor is not null)
         {
-            foreach (var param in primaryCtor.Parameters)
+            foreach (IParameterSymbol param in primaryCtor.Parameters)
             {
-                var memberInfo = ExtractMemberInfo(param, useKebabCase);
+                OptionsMemberInfo memberInfo = ExtractMemberInfo(param, useKebabCase);
                 members.Add(memberInfo);
             }
         }
         else
         {
             // Fall back to public properties with public setters or init
-            foreach (var prop in typeSymbol.GetMembers().OfType<IPropertySymbol>())
+            foreach (IPropertySymbol prop in typeSymbol.GetMembers().OfType<IPropertySymbol>())
             {
                 if (prop.DeclaredAccessibility != Accessibility.Public)
                     continue;
-                if (prop.SetMethod is null || prop.SetMethod.DeclaredAccessibility != Accessibility.Public)
+                if (
+                    prop.SetMethod is null
+                    || prop.SetMethod.DeclaredAccessibility != Accessibility.Public
+                )
                     continue;
 
-                var memberInfo = ExtractMemberInfoFromProperty(prop, useKebabCase);
+                OptionsMemberInfo memberInfo = ExtractMemberInfoFromProperty(prop, useKebabCase);
                 members.Add(memberInfo);
             }
         }
 
-        var ns = typeSymbol.ContainingNamespace.ToDisplayString();
-        var fullTypeName = Utilities.GetFullyQualifiedName(ns, typeSymbol.Name);
+        string ns = typeSymbol.ContainingNamespace.ToDisplayString();
+        string fullTypeName = Utilities.GetFullyQualifiedName(ns, typeSymbol.Name);
 
-        return new OptionsTypeInfo(ns, typeSymbol.Name, fullTypeName, members.ToImmutableArray(), useKebabCase);
+        return new OptionsTypeInfo(
+            ns,
+            typeSymbol.Name,
+            fullTypeName,
+            [.. members],
+            useKebabCase
+        );
     }
 
-    private static (bool isArgument, string? explicitName, string? alias, string? description) ExtractAttributeInfo(
-        IEnumerable<AttributeData> attributes
-    )
+    private static (
+        bool isArgument,
+        string? explicitName,
+        string? alias,
+        string? description
+    ) ExtractAttributeInfo(IEnumerable<AttributeData> attributes)
     {
-        var isArgument = false;
+        bool isArgument = false;
         string? explicitName = null;
         string? alias = null;
         string? description = null;
 
-        foreach (var attr in attributes)
+        foreach (AttributeData attr in attributes)
         {
-            var attrName = attr.AttributeClass?.ToDisplayString();
+            string? attrName = attr.AttributeClass?.ToDisplayString();
 
             if (attrName == AttributeNames.Argument)
             {
                 isArgument = true;
-                foreach (var namedArg in attr.NamedArguments)
+                foreach (KeyValuePair<string, TypedConstant> namedArg in attr.NamedArguments)
                 {
                     if (namedArg.Key == "Name")
                         explicitName = namedArg.Value.Value as string;
@@ -98,7 +112,7 @@ internal static class OptionsTypeParser
             }
             else if (attrName == AttributeNames.Option)
             {
-                foreach (var namedArg in attr.NamedArguments)
+                foreach (KeyValuePair<string, TypedConstant> namedArg in attr.NamedArguments)
                 {
                     if (namedArg.Key == "Name")
                         explicitName = namedArg.Value.Value as string;
@@ -115,11 +129,14 @@ internal static class OptionsTypeParser
 
     private static OptionsMemberInfo ExtractMemberInfo(IParameterSymbol param, bool useKebabCase)
     {
-        var (isArgument, explicitName, alias, description) = ExtractAttributeInfo(param.GetAttributes());
+        (bool isArgument, string? explicitName, string? alias, string? description) = ExtractAttributeInfo(
+            param.GetAttributes()
+        );
 
-        var cliName = explicitName ?? (useKebabCase ? Utilities.ToKebabCase(param.Name) : param.Name);
-        var isBoolean = param.Type.SpecialType == SpecialType.System_Boolean;
-        var isValueType = param.Type.IsValueType;
+        string cliName =
+            explicitName ?? (useKebabCase ? Utilities.ToKebabCase(param.Name) : param.Name);
+        bool isBoolean = param.Type.SpecialType == SpecialType.System_Boolean;
+        bool isValueType = param.Type.IsValueType;
 
         return new OptionsMemberInfo(
             param.Name,
@@ -129,20 +146,27 @@ internal static class OptionsTypeParser
             isBoolean,
             param.NullableAnnotation == NullableAnnotation.Annotated,
             param.HasExplicitDefaultValue,
-            param.HasExplicitDefaultValue ? Utilities.FormatDefaultValue(param.ExplicitDefaultValue, param.Type) : null,
+            param.HasExplicitDefaultValue
+                ? Utilities.FormatDefaultValue(param.ExplicitDefaultValue, param.Type)
+                : null,
             alias,
             description,
             isValueType
         );
     }
 
-    private static OptionsMemberInfo ExtractMemberInfoFromProperty(IPropertySymbol prop, bool useKebabCase)
+    private static OptionsMemberInfo ExtractMemberInfoFromProperty(
+        IPropertySymbol prop,
+        bool useKebabCase
+    )
     {
-        var (isArgument, explicitName, alias, description) = ExtractAttributeInfo(prop.GetAttributes());
+        (bool isArgument, string? explicitName, string? alias, string? description) = ExtractAttributeInfo(
+            prop.GetAttributes()
+        );
 
-        var cliName = explicitName ?? (useKebabCase ? Utilities.ToKebabCase(prop.Name) : prop.Name);
-        var isBoolean = prop.Type.SpecialType == SpecialType.System_Boolean;
-        var isValueType = prop.Type.IsValueType;
+        string cliName = explicitName ?? (useKebabCase ? Utilities.ToKebabCase(prop.Name) : prop.Name);
+        bool isBoolean = prop.Type.SpecialType == SpecialType.System_Boolean;
+        bool isValueType = prop.Type.IsValueType;
 
         // Properties don't have default values in the same way; we'd need to analyze initializers
         return new OptionsMemberInfo(

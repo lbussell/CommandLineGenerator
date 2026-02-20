@@ -7,12 +7,14 @@
 using System.CommandLine;
 using CommandLineGenerator;
 
-var myCommand = new RootCommand(description: "Command line app without hosting or dependency injection.");
+RootCommand myCommand = new RootCommand(
+    description: "Command line app without hosting or dependency injection."
+);
 myCommand.AddOptions<CommandLineOptions>();
 myCommand.SetAction(
     (parseResult, ct) =>
     {
-        var options = CommandLineOptionsMapper.Parse(parseResult);
+        CommandLineOptions options = CommandLineOptionsMapper.Parse(parseResult);
         Console.WriteLine($"{options.Greeting}, {options.Name}!");
         return Task.CompletedTask;
     }

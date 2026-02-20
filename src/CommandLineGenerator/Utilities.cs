@@ -20,10 +20,10 @@ internal static class Utilities
             return name;
 
         // Insert hyphen before each uppercase letter (except the first), then lowercase
-        var result = new StringBuilder();
+        StringBuilder result = new StringBuilder();
         for (int i = 0; i < name.Length; i++)
         {
-            var c = name[i];
+            char c = name[i];
             if (i > 0 && char.IsUpper(c))
             {
                 result.Append('-');
@@ -46,7 +46,7 @@ internal static class Utilities
     /// </summary>
     public static string GetFullyQualifiedName(string? ns, string typeName)
     {
-        var hasNamespace = !string.IsNullOrEmpty(ns) && ns != Namespaces.Global;
+        bool hasNamespace = !string.IsNullOrEmpty(ns) && ns != Namespaces.Global;
         return hasNamespace ? $"global::{ns}.{typeName}" : $"global::{typeName}";
     }
 

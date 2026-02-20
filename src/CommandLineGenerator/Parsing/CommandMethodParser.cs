@@ -14,47 +14,50 @@ internal static class CommandMethodParser
     /// <summary>
     /// Extracts metadata from a method decorated with [Command].
     /// </summary>
-    public static CommandMethodInfo? Parse(GeneratorAttributeSyntaxContext ctx, CancellationToken ct)
+    public static CommandMethodInfo? Parse(
+        GeneratorAttributeSyntaxContext ctx,
+        CancellationToken ct
+    )
     {
         if (ctx.TargetSymbol is not IMethodSymbol methodSymbol)
             return null;
 
-        var commandAttr = ctx.Attributes.FirstOrDefault(a =>
+        AttributeData? commandAttr = ctx.Attributes.FirstOrDefault(a =>
             a.AttributeClass?.ToDisplayString() == AttributeNames.Command
         );
 
         if (commandAttr is null)
             return null;
 
-        var commandName =
+        string commandName =
             commandAttr.ConstructorArguments.Length > 0
                 ? commandAttr.ConstructorArguments[0].Value as string ?? ""
                 : "";
 
         string? description = null;
-        foreach (var namedArg in commandAttr.NamedArguments)
+        foreach (KeyValuePair<string, TypedConstant> namedArg in commandAttr.NamedArguments)
         {
             if (namedArg.Key == "Description")
                 description = namedArg.Value.Value as string;
         }
 
-        var containingType = methodSymbol.ContainingType;
-        var containingNs = containingType.ContainingNamespace.ToDisplayString();
-        var containingFullName = Utilities.GetFullyQualifiedName(containingNs, containingType.Name);
+        INamedTypeSymbol containingType = methodSymbol.ContainingType;
+        string containingNs = containingType.ContainingNamespace.ToDisplayString();
+        string containingFullName = Utilities.GetFullyQualifiedName(containingNs, containingType.Name);
 
         // Extract parameter types (should be options types)
-        var optionsTypeNames = methodSymbol
+        ImmutableArray<string> optionsTypeNames = [.. methodSymbol
             .Parameters.Select(p =>
             {
-                var ns = p.Type.ContainingNamespace?.ToDisplayString() ?? "";
+                string ns = p.Type.ContainingNamespace?.ToDisplayString() ?? "";
                 return Utilities.GetFullyQualifiedName(ns, p.Type.Name);
-            })
-            .ToImmutableArray();
+            })];
 
         // Check if method returns Task (async) or void (sync)
-        var returnType = methodSymbol.ReturnType;
-        var isAsync =
-            returnType.Name == "Task" && returnType.ContainingNamespace?.ToDisplayString() == "System.Threading.Tasks";
+        ITypeSymbol returnType = methodSymbol.ReturnType;
+        bool isAsync =
+            returnType.Name == "Task"
+            && returnType.ContainingNamespace?.ToDisplayString() == "System.Threading.Tasks";
 
         return new CommandMethodInfo(
             containingNs,

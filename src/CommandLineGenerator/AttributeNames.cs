@@ -14,7 +14,8 @@ internal static class AttributeNames
     public const string OptionClass = "OptionAttribute";
 
     public const string Command = Namespaces.Generated + "." + CommandClass;
-    public const string MapCommandLineOptions = Namespaces.Generated + "." + MapCommandLineOptionsClass;
+    public const string MapCommandLineOptions =
+        Namespaces.Generated + "." + MapCommandLineOptionsClass;
     public const string Argument = Namespaces.Generated + "." + ArgumentClass;
     public const string Option = Namespaces.Generated + "." + OptionClass;
 }

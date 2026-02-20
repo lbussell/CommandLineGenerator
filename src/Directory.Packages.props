@@ -3,6 +3,7 @@
         <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     </PropertyGroup>
     <ItemGroup>
+        <PackageVersion Include="CSharpier.MSBuild" Version="1.2.6" />
         <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" />
         <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
         <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.2" />

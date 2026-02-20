@@ -6,7 +6,7 @@
 
 using CommandLineGenerator;
 
-var builder = ConsoleApp.CreateBuilder(args);
+ConsoleAppBuilder builder = ConsoleApp.CreateBuilder(args);
 builder.AddCommand<Commands>();
 
 return await builder.RunAsync();
@@ -18,7 +18,9 @@ internal record HelloOptions([Argument] string Name, string Greeting = "Hello");
 internal record GoodbyeOptions([Argument] string Name);
 
 [MapCommandLineOptions]
-internal record VerboseOptions([Option(Alias = "-v", Description = "Enable verbose output")] bool Verbose = false);
+internal record VerboseOptions(
+    [Option(Alias = "-v", Description = "Enable verbose output")] bool Verbose = false
+);
 
 [MapCommandLineOptions]
 internal record StatusOptions([Option(Description = "Show detailed status")] bool Detailed = false);

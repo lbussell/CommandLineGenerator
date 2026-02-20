@@ -1,59 +1,53 @@
 root = true
 
-# All files
 [*]
 indent_style = space
 
 # Xml files
 [*.xml]
 indent_size = 2
-
-# Xml project files
 [*.{csproj,fsproj,vbproj,proj,slnx}]
 indent_size = 2
-
-# Xml config files
 [*.{props,targets,config,nuspec}]
 indent_size = 2
-
-[*.json]
+[*.{json,jsonc,json5}]
 indent_size = 2
 
 # C# files
 [*.cs]
-
-#### Core EditorConfig Options ####
-
-# Indentation and spacing
 indent_size = 4
 tab_width = 4
-
-# New line preferences
 insert_final_newline = true
 
-[*.{config,csproj,props,slnx,targets,xaml,xml}]
-indent_style = space
-indent_size = 4
-max_line_length = 100
+#### Changes from defaults ####
+[*.cs]
 
-#### .NET Code ####
+# Always use explicit types instead of var
+csharp_style_var_elsewhere = false:warning
+csharp_style_var_for_built_in_types = false:warning
+csharp_style_var_when_type_is_apparent = false:warning
 
-[*.{cs,csx}]
-# csharpier: non-configurable behaviors
-charset = utf-8
-insert_final_newline = true
-trim_trailing_whitespace = true
-dotnet_sort_system_directives_first = true
+# Settings for using new() vs. new Type()
+csharp_style_implicit_object_creation_when_type_is_apparent = true:none
+dotnet_diagnostic.IDE0090.severity = none
+
+# Use collection expressions
+dotnet_style_collection_initializer = true:warning
+dotnet_style_prefer_collection_expression = when_types_exactly_match:warning
+
+dotnet_diagnostic.IDE0004.severity = warning # Remove unnecessary cast
+dotnet_diagnostic.IDE0005.severity = warning # Using directive is unnecessary
+#### End changes from defaults ####
+
+#### .NET Coding Conventions ####
+[*.{cs,vb}]
+
+# Organize usings
 dotnet_separate_import_directive_groups = false
-# csharpier: configurable behaviors
-indent_style = space
-indent_size = 4
-max_line_length = 100
+dotnet_sort_system_directives_first = true
 
-# File header settings
+# File header
 file_header_template = SPDX-FileCopyrightText: Copyright (c) 2026 Logan Bussell\nSPDX-License-Identifier: MIT
-# Enforce file header
-dotnet_diagnostic.IDE0073.severity = warning
 
 # this. and Me. preferences
 dotnet_style_qualification_for_event = false:silent
@@ -72,18 +66,18 @@ dotnet_style_parentheses_in_other_operators = never_if_unnecessary:silent
 dotnet_style_parentheses_in_relational_binary_operators = always_for_clarity:silent
 
 # Modifier preferences
-dotnet_style_require_accessibility_modifiers = always:suggestion
+dotnet_style_require_accessibility_modifiers = for_non_interface_members:silent
 
 # Expression-level preferences
 dotnet_style_coalesce_expression = true:suggestion
-dotnet_style_collection_initializer = true:suggestion
 dotnet_style_explicit_tuple_names = true:suggestion
-dotnet_style_namespace_match_folder = true:suggestion
+dotnet_style_namespace_match_folder = true:warning
+dotnet_diagnostic.IDE0130.severity = warning
+dotnet_diagnostic.IDE0073.severity = warning
 dotnet_style_null_propagation = true:suggestion
 dotnet_style_object_initializer = true:suggestion
 dotnet_style_operator_placement_when_wrapping = beginning_of_line
 dotnet_style_prefer_auto_properties = true:suggestion
-dotnet_style_prefer_collection_expression = when_types_loosely_match:suggestion
 dotnet_style_prefer_compound_assignment = true:suggestion
 dotnet_style_prefer_conditional_expression_over_assignment = true:suggestion
 dotnet_style_prefer_conditional_expression_over_return = true:suggestion
@@ -106,11 +100,6 @@ dotnet_remove_unnecessary_suppression_exclusions = none
 #### C# Coding Conventions ####
 [*.cs]
 
-# var preferences
-csharp_style_var_elsewhere = false:silent
-csharp_style_var_for_built_in_types = false:silent
-csharp_style_var_when_type_is_apparent = false:silent
-
 # Expression-bodied members
 csharp_style_expression_bodied_accessors = true:silent
 csharp_style_expression_bodied_constructors = false:silent
@@ -122,8 +111,8 @@ csharp_style_expression_bodied_operators = false:silent
 csharp_style_expression_bodied_properties = true:silent
 
 # Pattern matching preferences
-csharp_style_pattern_matching_over_as_with_null_check = true:warning
-csharp_style_pattern_matching_over_is_with_cast_check = true:warning
+csharp_style_pattern_matching_over_as_with_null_check = true:suggestion
+csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
 csharp_style_prefer_extended_property_pattern = true:suggestion
 csharp_style_prefer_not_pattern = true:suggestion
 csharp_style_prefer_pattern_matching = true:silent
@@ -142,7 +131,7 @@ csharp_style_prefer_readonly_struct_member = true:suggestion
 # Code-block preferences
 csharp_prefer_braces = true:silent
 csharp_prefer_simple_using_statement = true:suggestion
-csharp_style_namespace_declarations = file_scoped:warning
+csharp_style_namespace_declarations = file_scoped:suggestion
 csharp_style_prefer_method_group_conversion = true:silent
 csharp_style_prefer_primary_constructors = true:suggestion
 csharp_style_prefer_top_level_statements = true:silent
@@ -150,7 +139,6 @@ csharp_style_prefer_top_level_statements = true:silent
 # Expression-level preferences
 csharp_prefer_simple_default_expression = true:suggestion
 csharp_style_deconstructed_variable_declaration = true:suggestion
-csharp_style_implicit_object_creation_when_type_is_apparent = true:suggestion
 csharp_style_inlined_variable_declaration = true:suggestion
 csharp_style_prefer_index_operator = true:suggestion
 csharp_style_prefer_local_over_anonymous_function = true:suggestion
@@ -163,7 +151,7 @@ csharp_style_unused_value_assignment_preference = discard_variable:suggestion
 csharp_style_unused_value_expression_statement_preference = discard_variable:silent
 
 # 'using' directive preferences
-csharp_using_directive_placement = outside_namespace:warning
+csharp_using_directive_placement = outside_namespace:silent
 
 #### C# Formatting Rules ####
 
@@ -217,79 +205,79 @@ csharp_preserve_single_line_statements = true
 
 # Naming rules
 
-dotnet_naming_rule.types_and_namespaces_should_be_pascalcase.severity = warning
+dotnet_naming_rule.types_and_namespaces_should_be_pascalcase.severity = suggestion
 dotnet_naming_rule.types_and_namespaces_should_be_pascalcase.symbols = types_and_namespaces
 dotnet_naming_rule.types_and_namespaces_should_be_pascalcase.style = pascalcase
 
-dotnet_naming_rule.interfaces_should_be_ipascalcase.severity = warning
+dotnet_naming_rule.interfaces_should_be_ipascalcase.severity = suggestion
 dotnet_naming_rule.interfaces_should_be_ipascalcase.symbols = interfaces
 dotnet_naming_rule.interfaces_should_be_ipascalcase.style = ipascalcase
 
-dotnet_naming_rule.type_parameters_should_be_tpascalcase.severity = warning
+dotnet_naming_rule.type_parameters_should_be_tpascalcase.severity = suggestion
 dotnet_naming_rule.type_parameters_should_be_tpascalcase.symbols = type_parameters
 dotnet_naming_rule.type_parameters_should_be_tpascalcase.style = tpascalcase
 
-dotnet_naming_rule.methods_should_be_pascalcase.severity = warning
+dotnet_naming_rule.methods_should_be_pascalcase.severity = suggestion
 dotnet_naming_rule.methods_should_be_pascalcase.symbols = methods
 dotnet_naming_rule.methods_should_be_pascalcase.style = pascalcase
 
-dotnet_naming_rule.properties_should_be_pascalcase.severity = warning
+dotnet_naming_rule.properties_should_be_pascalcase.severity = suggestion
 dotnet_naming_rule.properties_should_be_pascalcase.symbols = properties
 dotnet_naming_rule.properties_should_be_pascalcase.style = pascalcase
 
-dotnet_naming_rule.events_should_be_pascalcase.severity = warning
+dotnet_naming_rule.events_should_be_pascalcase.severity = suggestion
 dotnet_naming_rule.events_should_be_pascalcase.symbols = events
 dotnet_naming_rule.events_should_be_pascalcase.style = pascalcase
 
-dotnet_naming_rule.local_variables_should_be_camelcase.severity = warning
+dotnet_naming_rule.local_variables_should_be_camelcase.severity = suggestion
 dotnet_naming_rule.local_variables_should_be_camelcase.symbols = local_variables
 dotnet_naming_rule.local_variables_should_be_camelcase.style = camelcase
 
-dotnet_naming_rule.local_constants_should_be_pascalcase.severity = warning
-dotnet_naming_rule.local_constants_should_be_pascalcase.symbols = local_constants
-dotnet_naming_rule.local_constants_should_be_pascalcase.style = pascalcase
+dotnet_naming_rule.local_constants_should_be_camelcase.severity = suggestion
+dotnet_naming_rule.local_constants_should_be_camelcase.symbols = local_constants
+dotnet_naming_rule.local_constants_should_be_camelcase.style = camelcase
 
-dotnet_naming_rule.parameters_should_be_camelcase.severity = warning
+dotnet_naming_rule.parameters_should_be_camelcase.severity = suggestion
 dotnet_naming_rule.parameters_should_be_camelcase.symbols = parameters
 dotnet_naming_rule.parameters_should_be_camelcase.style = camelcase
 
-dotnet_naming_rule.public_fields_should_be_pascalcase.severity = warning
+dotnet_naming_rule.public_fields_should_be_pascalcase.severity = suggestion
 dotnet_naming_rule.public_fields_should_be_pascalcase.symbols = public_fields
 dotnet_naming_rule.public_fields_should_be_pascalcase.style = pascalcase
 
-dotnet_naming_rule.private_fields_should_be__camelcase.severity = warning
+dotnet_naming_rule.private_fields_should_be__camelcase.severity = suggestion
 dotnet_naming_rule.private_fields_should_be__camelcase.symbols = private_fields
 dotnet_naming_rule.private_fields_should_be__camelcase.style = _camelcase
 
-dotnet_naming_rule.private_static_fields_should_be_s_camelcase.severity = warning
+dotnet_naming_rule.private_static_fields_should_be_s_camelcase.severity = suggestion
 dotnet_naming_rule.private_static_fields_should_be_s_camelcase.symbols = private_static_fields
 dotnet_naming_rule.private_static_fields_should_be_s_camelcase.style = s_camelcase
 
-dotnet_naming_rule.public_constant_fields_should_be_pascalcase.severity = warning
+dotnet_naming_rule.public_constant_fields_should_be_pascalcase.severity = suggestion
 dotnet_naming_rule.public_constant_fields_should_be_pascalcase.symbols = public_constant_fields
 dotnet_naming_rule.public_constant_fields_should_be_pascalcase.style = pascalcase
 
-dotnet_naming_rule.private_constant_fields_should_be_pascalcase.severity = warning
+dotnet_naming_rule.private_constant_fields_should_be_pascalcase.severity = suggestion
 dotnet_naming_rule.private_constant_fields_should_be_pascalcase.symbols = private_constant_fields
 dotnet_naming_rule.private_constant_fields_should_be_pascalcase.style = pascalcase
 
-dotnet_naming_rule.public_static_readonly_fields_should_be_pascalcase.severity = warning
+dotnet_naming_rule.public_static_readonly_fields_should_be_pascalcase.severity = suggestion
 dotnet_naming_rule.public_static_readonly_fields_should_be_pascalcase.symbols = public_static_readonly_fields
 dotnet_naming_rule.public_static_readonly_fields_should_be_pascalcase.style = pascalcase
 
-dotnet_naming_rule.private_static_readonly_fields_should_be_pascalcase.severity = warning
+dotnet_naming_rule.private_static_readonly_fields_should_be_pascalcase.severity = suggestion
 dotnet_naming_rule.private_static_readonly_fields_should_be_pascalcase.symbols = private_static_readonly_fields
 dotnet_naming_rule.private_static_readonly_fields_should_be_pascalcase.style = pascalcase
 
-dotnet_naming_rule.enums_should_be_pascalcase.severity = warning
+dotnet_naming_rule.enums_should_be_pascalcase.severity = suggestion
 dotnet_naming_rule.enums_should_be_pascalcase.symbols = enums
 dotnet_naming_rule.enums_should_be_pascalcase.style = pascalcase
 
-dotnet_naming_rule.local_functions_should_be_pascalcase.severity = warning
+dotnet_naming_rule.local_functions_should_be_pascalcase.severity = suggestion
 dotnet_naming_rule.local_functions_should_be_pascalcase.symbols = local_functions
 dotnet_naming_rule.local_functions_should_be_pascalcase.style = pascalcase
 
-dotnet_naming_rule.non_field_members_should_be_pascalcase.severity = warning
+dotnet_naming_rule.non_field_members_should_be_pascalcase.severity = suggestion
 dotnet_naming_rule.non_field_members_should_be_pascalcase.symbols = non_field_members
 dotnet_naming_rule.non_field_members_should_be_pascalcase.style = pascalcase
 
