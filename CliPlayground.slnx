@@ -1,8 +1,6 @@
 <Solution>
-    <Folder Name="/Samples/">
-        <Project Path="src/Samples/01_Simple/Simple.csproj" />
-        <Project Path="src/Samples/02_Hosting/Hosting.csproj" />
-        <Project Path="src/Samples/03_DependencyInjection/DependencyInjection.csproj" />
-    </Folder>
-    <Project Path="src/CommandLineGenerator/CommandLineGenerator.csproj" />
+  <Folder Name="/Samples/">
+    <Project Path="src/Samples/01_Simple/Simple.csproj" />
+  </Folder>
+  <Project Path="src/CommandLineGenerator/CommandLineGenerator.csproj" />
 </Solution>

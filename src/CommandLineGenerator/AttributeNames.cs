@@ -8,14 +8,23 @@ namespace CommandLineGenerator;
 /// </summary>
 internal static class AttributeNames
 {
-    public const string CommandClass = "CommandAttribute";
-    public const string MapCommandLineOptionsClass = "MapCommandLineOptionsAttribute";
-    public const string ArgumentClass = "ArgumentAttribute";
-    public const string OptionClass = "OptionAttribute";
+    private const string Ns = Namespaces.Generated;
 
-    public const string Command = Namespaces.Generated + "." + CommandClass;
-    public const string MapCommandLineOptions =
-        Namespaces.Generated + "." + MapCommandLineOptionsClass;
-    public const string Argument = Namespaces.Generated + "." + ArgumentClass;
-    public const string Option = Namespaces.Generated + "." + OptionClass;
+    public const string CommandLineBindableClass = "CommandLineBindableAttribute";
+    public const string CommandLineBindable = Ns + "." + CommandLineBindableClass;
+
+    public const string CommandLineNamingConventionClass = "CommandLineNamingConventionAttribute";
+    public const string CommandLineNamingConvention = Ns + "." + CommandLineNamingConventionClass;
+
+    public const string CommandLineOptionClass = "CommandLineOptionAttribute";
+    public const string CommandLineOption = Ns + "." + CommandLineOptionClass;
+
+    public const string CommandLineArgumentClass = "CommandLineArgumentAttribute";
+    public const string CommandLineArgument = Ns + "." + CommandLineArgumentClass;
+
+    public const string CommandLineIgnoreClass = "CommandLineIgnoreAttribute";
+    public const string CommandLineIgnore = Ns + "." + CommandLineIgnoreClass;
+
+    public const string CommandLineBindingContextClass = "CommandLineBindingContext";
+    public const string CommandLineBindingContext = Ns + "." + CommandLineBindingContextClass;
 }

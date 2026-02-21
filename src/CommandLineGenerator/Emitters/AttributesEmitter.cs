@@ -4,12 +4,12 @@
 namespace CommandLineGenerator.Emitters;
 
 /// <summary>
-/// Emits the generated attribute classes used to decorate user code.
+/// Emits the generated attribute classes and base types used to decorate user code.
 /// </summary>
 internal static class AttributesEmitter
 {
     /// <summary>
-    /// Generates the source code for all marker attributes.
+    /// Generates the source code for all marker attributes and the binding context base class.
     /// </summary>
     public static string Emit()
     {
@@ -20,62 +20,70 @@ internal static class AttributesEmitter
             namespace {{Namespaces.Generated}};
 
             /// <summary>
-            /// Marks a method as a CLI command. The method parameters should be options types
-            /// decorated with <see cref="{{AttributeNames.MapCommandLineOptionsClass}}"/>.
+            /// Specifies a type whose public members should be bound from command-line arguments.
+            /// Apply multiple times to bind multiple types.
             /// </summary>
-            [global::System.AttributeUsage(global::System.AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
-            internal sealed class {{AttributeNames.CommandClass}} : global::System.Attribute
+            [global::System.AttributeUsage(global::System.AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
+            internal sealed class {{AttributeNames.CommandLineBindableClass}} : global::System.Attribute
             {
-                public CommandAttribute(string name) => Name = name;
-                public CommandAttribute() => Name = "";
+                public {{AttributeNames.CommandLineBindableClass}}(global::System.Type type) => Type = type;
 
-                /// <summary>The command name. Empty string for root command.</summary>
-                public string Name { get; }
-
-                /// <summary>Description shown in help text.</summary>
-                public string? Description { get; set; }
+                /// <summary>The type to generate binding code for.</summary>
+                public global::System.Type Type { get; }
             }
 
             /// <summary>
-            /// Marks a record or class as a container for command-line options and arguments.
-            /// Properties without attributes become options; use <see cref="{{AttributeNames.ArgumentClass}}"/> for arguments.
+            /// Specifies the naming convention used when converting property names to CLI option/argument names.
             /// </summary>
             [global::System.AttributeUsage(global::System.AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
-            internal sealed class {{AttributeNames.MapCommandLineOptionsClass}} : global::System.Attribute
+            internal sealed class {{AttributeNames.CommandLineNamingConventionClass}} : global::System.Attribute
             {
-                /// <summary>
-                /// When true (default), property names are converted to kebab-case for option names.
-                /// </summary>
-                public bool UseKebabCase { get; set; } = true;
+                public {{AttributeNames.CommandLineNamingConventionClass}}(CommandLineNamingConvention convention) => Convention = convention;
+
+                /// <summary>The naming convention to use.</summary>
+                public CommandLineNamingConvention Convention { get; }
             }
 
             /// <summary>
-            /// Marks a parameter or property as a CLI option with explicit configuration.
+            /// The naming convention for generated CLI names.
             /// </summary>
-            [global::System.AttributeUsage(global::System.AttributeTargets.Parameter | global::System.AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
-            internal sealed class {{AttributeNames.OptionClass}} : global::System.Attribute
+            internal enum CommandLineNamingConvention
             {
-                /// <summary>The primary option name (e.g., "--verbose"). If null, derived from property name.</summary>
-                public string? Name { get; set; }
-
-                /// <summary>Short alias (e.g., "-v").</summary>
-                public string? Alias { get; set; }
-
-                /// <summary>Description shown in help text.</summary>
-                public string? Description { get; set; }
+                /// <summary>Convert PascalCase to kebab-case (e.g. "MyOption" → "--my-option"). This is the default.</summary>
+                KebabCase = 0,
             }
 
             /// <summary>
-            /// Marks a parameter or property as a positional CLI argument.
+            /// Explicitly marks a property or parameter as a CLI option.
+            /// Properties are options by default, so this attribute is optional.
             /// </summary>
-            [global::System.AttributeUsage(global::System.AttributeTargets.Parameter | global::System.AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
-            internal sealed class {{AttributeNames.ArgumentClass}} : global::System.Attribute
+            [global::System.AttributeUsage(global::System.AttributeTargets.Property | global::System.AttributeTargets.Parameter, Inherited = false, AllowMultiple = false)]
+            internal sealed class {{AttributeNames.CommandLineOptionClass}} : global::System.Attribute
             {
-                /// <summary>The argument name shown in help text.</summary>
-                public string? Name { get; set; }
+            }
 
-                /// <summary>Description shown in help text.</summary>
-                public string? Description { get; set; }
+            /// <summary>
+            /// Marks a property or parameter as a positional CLI argument.
+            /// </summary>
+            [global::System.AttributeUsage(global::System.AttributeTargets.Property | global::System.AttributeTargets.Parameter, Inherited = false, AllowMultiple = false)]
+            internal sealed class {{AttributeNames.CommandLineArgumentClass}} : global::System.Attribute
+            {
+            }
+
+            /// <summary>
+            /// Marks a property or parameter to be excluded from command-line binding.
+            /// </summary>
+            [global::System.AttributeUsage(global::System.AttributeTargets.Property | global::System.AttributeTargets.Parameter, Inherited = false, AllowMultiple = false)]
+            internal sealed class {{AttributeNames.CommandLineIgnoreClass}} : global::System.Attribute
+            {
+            }
+
+            /// <summary>
+            /// Base class for generated binding contexts. Derive from this class and apply
+            /// <see cref="{{AttributeNames.CommandLineBindableClass}}"/> to generate binding code.
+            /// </summary>
+            internal abstract class {{AttributeNames.CommandLineBindingContextClass}}
+            {
             }
             """;
     }

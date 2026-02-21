@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 Logan Bussell
 // SPDX-License-Identifier: MIT
 
-using System.Collections.Immutable;
 using System.Text;
 using CommandLineGenerator.Emitters;
 using CommandLineGenerator.Parsing;
@@ -14,14 +13,15 @@ using Microsoft.CodeAnalysis.Text;
 namespace CommandLineGenerator;
 
 /// <summary>
-/// Incremental source generator that generates CLI infrastructure from attributed classes.
+/// Incremental source generator that generates CLI binding infrastructure from
+/// <c>[CommandLineBindable]</c>-decorated binding context classes.
 /// </summary>
 [Generator(LanguageNames.CSharp)]
 public sealed class CommandLineGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        // Always generate the base infrastructure (attributes)
+        // Always generate the base infrastructure (attributes and base class)
         context.RegisterPostInitializationOutput(static ctx =>
         {
             ctx.AddSource(
@@ -30,76 +30,24 @@ public sealed class CommandLineGenerator : IIncrementalGenerator
             );
         });
 
-        // Discover options types with [MapCommandLineOptions]
-        IncrementalValueProvider<ImmutableArray<OptionsTypeInfo?>> optionsTypes = context
+        // Discover binding context classes with [CommandLineBindable]
+        IncrementalValuesProvider<BindingContextInfo?> bindingContexts = context
             .SyntaxProvider.ForAttributeWithMetadataName(
-                AttributeNames.MapCommandLineOptions,
-                predicate: static (node, _) =>
-                    node is RecordDeclarationSyntax or ClassDeclarationSyntax,
-                transform: static (ctx, ct) => OptionsTypeParser.Parse(ctx, ct)
+                AttributeNames.CommandLineBindable,
+                predicate: static (node, _) => node is ClassDeclarationSyntax,
+                transform: static (ctx, ct) => BindingContextParser.Parse(ctx, ct)
             )
-            .Where(static o => o is not null)
-            .Collect()!;
+            .Where(static c => c is not null);
 
-        // Discover command methods with [Command]
-        IncrementalValueProvider<ImmutableArray<CommandMethodInfo?>> commandMethods = context
-            .SyntaxProvider.ForAttributeWithMetadataName(
-                AttributeNames.Command,
-                predicate: static (node, _) => node is MethodDeclarationSyntax,
-                transform: static (ctx, ct) => CommandMethodParser.Parse(ctx, ct)
-            )
-            .Where(static c => c is not null)
-            .Collect()!;
-
-        // Combine options types with command methods to generate ConsoleApp
-        IncrementalValueProvider<(ImmutableArray<CommandMethodInfo?> Left, ImmutableArray<OptionsTypeInfo?> Right)> combined = commandMethods.Combine(optionsTypes);
-
+        // Generate partial class for each binding context
         context.RegisterSourceOutput(
-            combined,
-            static (spc, data) =>
+            bindingContexts,
+            static (spc, ctx) =>
             {
-                ImmutableArray<CommandMethodInfo?> commands = data.Left;
-                ImmutableArray<OptionsTypeInfo?> options = data.Right;
-                Dictionary<string, OptionsTypeInfo> optionsDict = options
-                    .Where(o => o is not null)
-                    .ToDictionary(o => o!.FullTypeName, o => o!);
-
-                string? consoleAppSource = ConsoleAppEmitter.Emit(commands!, optionsDict);
-                if (consoleAppSource is not null)
+                if (ctx is not null)
                 {
-                    spc.AddSource(
-                        "ConsoleApp.g.cs",
-                        SourceText.From(consoleAppSource, Encoding.UTF8)
-                    );
-                }
-            }
-        );
-
-        // Generate mapper classes for each options type
-        context.RegisterSourceOutput(
-            optionsTypes,
-            static (spc, optionsTypes) =>
-            {
-                foreach (OptionsTypeInfo? opt in optionsTypes)
-                {
-                    if (opt is not null)
-                    {
-                        string mapperSource = OptionsMapperEmitter.Emit(opt);
-                        spc.AddSource(
-                            $"{opt.TypeName}Mapper.g.cs",
-                            SourceText.From(mapperSource, Encoding.UTF8)
-                        );
-                    }
-                }
-
-                // Generate CommandExtensions with AddOptions<T>() for all options types
-                string? extensionsSource = CommandExtensionsEmitter.Emit(optionsTypes);
-                if (extensionsSource is not null)
-                {
-                    spc.AddSource(
-                        "CommandExtensions.g.cs",
-                        SourceText.From(extensionsSource, Encoding.UTF8)
-                    );
+                    string source = BindingContextEmitter.Emit(ctx);
+                    spc.AddSource($"{ctx.ClassName}.g.cs", SourceText.From(source, Encoding.UTF8));
                 }
             }
         );

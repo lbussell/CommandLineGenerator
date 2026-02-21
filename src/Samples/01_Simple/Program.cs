@@ -11,12 +11,15 @@ RootCommand myCommand = new RootCommand(
 // Add options and arguments automatically based on MyOptionsClass.
 myCommand.AddOptions<MyOptionsClass>();
 
-myCommand.SetAction((parseResult, ct) =>
-{
-    // Parse the command line arguments into an instance of MyOptionsClass.
-    MyOptionsClass options = CommandLineContext.Parse<MyOptionsClass>(parseResult);
-    Console.WriteLine(options);
-});
+myCommand.SetAction(
+    (parseResult, ct) =>
+    {
+        // Parse the command line arguments into an instance of MyOptionsClass.
+        MyOptionsClass options = CommandLineContext.Parse<MyOptionsClass>(parseResult);
+        Console.WriteLine(options);
+        return Task.CompletedTask;
+    }
+);
 myCommand.Parse(args).Invoke();
 
 internal sealed class MyOptionsClass
@@ -58,6 +61,4 @@ internal sealed record MyOptionsRecord(
 [CommandLineBindable(typeof(MyOptionsRecord))]
 // Use kebab-case for command line options (e.g. "--required-string-option")
 [CommandLineNamingConvention(CommandLineNamingConvention.KebabCase)]
-internal sealed partial class CommandLineContext : CommandLineBindingContext
-{
-}
+internal sealed partial class CommandLineContext : CommandLineBindingContext { }

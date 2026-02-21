@@ -51,14 +51,6 @@ internal static class Utilities
     }
 
     /// <summary>
-    /// Gets the fully qualified mapper class name for an options type.
-    /// </summary>
-    public static string GetMapperName(OptionsTypeInfo optType)
-    {
-        return GetFullyQualifiedName(optType.Namespace, $"{optType.TypeName}Mapper");
-    }
-
-    /// <summary>
     /// Formats a default value for use in generated code.
     /// </summary>
     public static string FormatDefaultValue(object? value, ITypeSymbol type)
