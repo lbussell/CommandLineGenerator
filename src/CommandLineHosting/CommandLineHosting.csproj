@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup Label="Build Properties">
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>CommandLineHosting</RootNamespace>
+    <IsAotCompatible>true</IsAotCompatible>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <PropertyGroup Label="Package Metadata">
+    <PackageId>LoganBussell.CommandLineHosting</PackageId>
+    <Description>Hosting and dependency injection integration for System.CommandLine</Description>
+    <RepositoryUrl>https://github.com/lbussell/CommandLineGenerator.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>cli;commandline;hosting;dependency-injection;system-commandline</PackageTags>
+  </PropertyGroup>
+  <PropertyGroup Label="Versioning">
+    <!-- Update these version numbers manually. -->
+    <!-- Follow https://semver.org/spec/v2.0.0.html -->
+    <MajorVersion>0</MajorVersion>
+    <MinorVersion>1</MinorVersion>
+    <PatchVersion>0</PatchVersion>
+    <!-- Build date in format YYYY.M.D (no leading zeros for SemVer compliance) -->
+    <BuildDate>$([System.DateTime]::Now.ToString("yyyy.M.d"))</BuildDate>
+    <!-- Pre-release versioning label -->
+    <PreReleaseVersionLabel>preview</PreReleaseVersionLabel>
+    <!-- Set this to true to create a stable release version -->
+    <StableVersion>false</StableVersion>
+    <!-- Example CI/preview build version: 0.1.0-preview.202X.12.19 -->
+    <!-- Example stable release version: 0.1.0 (pass -p:StableVersion=true) -->
+    <PackageVersion Condition="'$(StableVersion)' == 'true'">
+      $(MajorVersion).$(MinorVersion).$(PatchVersion)
+    </PackageVersion>
+    <PackageVersion Condition="'$(StableVersion)' != 'true'">
+      $(MajorVersion).$(MinorVersion).$(PatchVersion)-$(PreReleaseVersionLabel).$(BuildDate)
+    </PackageVersion>
+  </PropertyGroup>
+  <PropertyGroup Label="Licensing">
+    <Authors>Logan Bussell</Authors>
+    <Copyright>Copyright (c) 2026 $(Authors)</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="System.CommandLine" />
+  </ItemGroup>
+</Project>
