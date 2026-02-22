@@ -30,17 +30,8 @@ rootCommand.Add(listCommand);
 HostApplicationBuilder builder = Host.CreateApplicationBuilder();
 CommandLineApplicationBuilder commandLineBuilder = builder.WithCommandLine();
 commandLineBuilder.AddRootCommand(rootCommand);
-ICommandLineHost commandLineHost = commandLineBuilder.Build(args);
+CommandLineHost commandLineHost = commandLineBuilder.Build(args);
 await commandLineHost.RunAsync();
-
-/// <summary>
-/// An <see cref="IHost"/> that runs a parsed System.CommandLine command
-/// with a start → invoke → stop lifecycle.
-/// </summary>
-internal interface ICommandLineHost : IHost, IAsyncDisposable
-{
-    Task RunAsync(CancellationToken cancellationToken = default);
-}
 
 /// <summary>
 /// A builder that wraps <see cref="HostApplicationBuilder"/> and adds
@@ -49,7 +40,7 @@ internal interface ICommandLineHost : IHost, IAsyncDisposable
 internal interface ICommandLineApplicationBuilder : IHostApplicationBuilder
 {
     ICommandLineApplicationBuilder AddRootCommand(RootCommand command);
-    ICommandLineHost Build(string[] args);
+    CommandLineHost Build(string[] args);
 }
 
 internal sealed class CommandLineApplicationBuilder(HostApplicationBuilder innerBuilder)
@@ -82,7 +73,7 @@ internal sealed class CommandLineApplicationBuilder(HostApplicationBuilder inner
         return this;
     }
 
-    public ICommandLineHost Build(string[] args)
+    public CommandLineHost Build(string[] args)
     {
         if (_rootCommand is null)
             throw new InvalidOperationException(
@@ -101,14 +92,9 @@ internal sealed class CommandLineApplicationBuilder(HostApplicationBuilder inner
 /// An <see cref="IHost"/> wrapper that starts the inner host, invokes the parsed
 /// System.CommandLine <see cref="ParseResult"/>, then gracefully stops the host.
 /// </summary>
-internal sealed class CommandLineHost : ICommandLineHost
+internal sealed class CommandLineHost(IHost innerHost) : IHost, IAsyncDisposable
 {
-    private readonly IHost _innerHost;
-
-    public CommandLineHost(IHost innerHost)
-    {
-        _innerHost = innerHost;
-    }
+    private readonly IHost _innerHost = innerHost;
 
     public IServiceProvider Services => _innerHost.Services;
 
@@ -131,7 +117,7 @@ internal sealed class CommandLineHost : ICommandLineHost
         try
         {
             ParseResult parseResult = Services.GetRequiredService<ParseResult>();
-            await parseResult.InvokeAsync();
+            await parseResult.InvokeAsync(cancellationToken: cancellationToken);
         }
         finally
         {
