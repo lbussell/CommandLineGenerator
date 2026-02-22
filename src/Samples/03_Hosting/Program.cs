@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 // Set up commands
-RootCommand rootCommand = new RootCommand();
+RootCommand rootCommand = [];
 rootCommand.AddOptions<RootCommandOptions>();
 rootCommand.SetAction(parseResult =>
 {
@@ -27,11 +27,65 @@ rootCommand.Add(listCommand);
 HostApplicationBuilder builder = Host.CreateApplicationBuilder();
 builder.AddCommandLine(rootCommand, args);
 
-IHost host = builder.Build();
-await host.StartAsync();
-ParseResult parseResult = host.Services.GetRequiredService<ParseResult>();
-await parseResult.InvokeAsync();
-await host.StopAsync();
+await using CommandLineHost commandLineHost = new CommandLineHost(builder.Build());
+await commandLineHost.RunAsync();
+
+/// <summary>
+/// An <see cref="IHost"/> wrapper that starts the inner host, invokes the parsed
+/// System.CommandLine <see cref="ParseResult"/>, then gracefully stops the host.
+/// </summary>
+internal sealed class CommandLineHost : IHost, IAsyncDisposable
+{
+    private readonly IHost _innerHost;
+
+    public CommandLineHost(IHost innerHost)
+    {
+        _innerHost = innerHost;
+    }
+
+    public IServiceProvider Services => _innerHost.Services;
+
+    public async Task StartAsync(CancellationToken cancellationToken = default)
+    {
+        await _innerHost.StartAsync(cancellationToken);
+    }
+
+    public async Task StopAsync(CancellationToken cancellationToken = default)
+    {
+        await _innerHost.StopAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Starts the host, invokes the parsed command, then stops the host.
+    /// </summary>
+    public async Task RunAsync(CancellationToken cancellationToken = default)
+    {
+        await StartAsync(cancellationToken);
+        try
+        {
+            ParseResult parseResult = Services.GetRequiredService<ParseResult>();
+            await parseResult.InvokeAsync(cancellationToken: cancellationToken);
+        }
+        finally
+        {
+            await StopAsync(cancellationToken);
+        }
+    }
+
+    public void Dispose() => _innerHost.Dispose();
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_innerHost is IAsyncDisposable asyncDisposable)
+        {
+            await asyncDisposable.DisposeAsync();
+        }
+        else
+        {
+            _innerHost.Dispose();
+        }
+    }
+}
 
 internal static class CommandLineHostingExtensions
 {
