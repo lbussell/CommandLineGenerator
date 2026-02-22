@@ -24,7 +24,4 @@ internal static class AttributeNames
 
     public const string CommandLineIgnoreClass = "CommandLineIgnoreAttribute";
     public const string CommandLineIgnore = Ns + "." + CommandLineIgnoreClass;
-
-    public const string CommandLineBindingContextClass = "CommandLineBindingContext";
-    public const string CommandLineBindingContext = Ns + "." + CommandLineBindingContextClass;
 }

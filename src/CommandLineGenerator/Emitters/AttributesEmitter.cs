@@ -77,14 +77,6 @@ internal static class AttributesEmitter
             internal sealed class {{AttributeNames.CommandLineIgnoreClass}} : global::System.Attribute
             {
             }
-
-            /// <summary>
-            /// Base class for generated binding contexts. Derive from this class and apply
-            /// <see cref="{{AttributeNames.CommandLineBindableClass}}"/> to generate binding code.
-            /// </summary>
-            internal abstract class {{AttributeNames.CommandLineBindingContextClass}}
-            {
-            }
             """;
     }
 }

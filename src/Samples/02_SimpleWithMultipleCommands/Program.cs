@@ -31,4 +31,4 @@ internal sealed record ListCommandOptions(string Path);
 [CommandLineBindable(typeof(RootCommandOptions))]
 [CommandLineBindable(typeof(ListCommandOptions))]
 [CommandLineNamingConvention(CommandLineNamingConvention.KebabCase)]
-internal sealed partial class CommandLineContext : CommandLineBindingContext { }
+internal static partial class CommandLineContext { }

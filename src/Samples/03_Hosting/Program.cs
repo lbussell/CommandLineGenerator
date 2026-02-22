@@ -98,15 +98,11 @@ internal sealed class CommandLineHost(IHost innerHost) : IHost, IAsyncDisposable
 
     public IServiceProvider Services => _innerHost.Services;
 
-    public async Task StartAsync(CancellationToken cancellationToken = default)
-    {
-        await _innerHost.StartAsync(cancellationToken);
-    }
+    public Task StartAsync(CancellationToken cancellationToken = default) =>
+        _innerHost.StartAsync(cancellationToken);
 
-    public async Task StopAsync(CancellationToken cancellationToken = default)
-    {
-        await _innerHost.StopAsync(cancellationToken);
-    }
+    public Task StopAsync(CancellationToken cancellationToken = default) =>
+        _innerHost.StopAsync(cancellationToken);
 
     /// <summary>
     /// Starts the host, invokes the parsed command, then stops the host.
@@ -154,4 +150,4 @@ internal sealed record ListCommandOptions(string Path);
 [CommandLineBindable(typeof(RootCommandOptions))]
 [CommandLineBindable(typeof(ListCommandOptions))]
 [CommandLineNamingConvention(CommandLineNamingConvention.KebabCase)]
-internal sealed partial class CommandLineContext : CommandLineBindingContext { }
+internal static partial class CommandLineContext { }

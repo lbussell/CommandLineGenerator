@@ -61,4 +61,4 @@ internal sealed record MyOptionsRecord(
 [CommandLineBindable(typeof(MyOptionsRecord))]
 // Use kebab-case for command line options (e.g. "--required-string-option")
 [CommandLineNamingConvention(CommandLineNamingConvention.KebabCase)]
-internal sealed partial class CommandLineContext : CommandLineBindingContext { }
+internal static partial class CommandLineContext { }

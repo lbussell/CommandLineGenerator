@@ -36,7 +36,7 @@ internal static class BindingContextEmitter
         }
 
         // Generate the partial class with Parse<T> and symbol fields
-        builder.AppendLine($"partial class {context.ClassName}");
+        builder.AppendLine($"static partial class {context.ClassName}");
         builder.AppendLine("{");
         builder.Indent();
 

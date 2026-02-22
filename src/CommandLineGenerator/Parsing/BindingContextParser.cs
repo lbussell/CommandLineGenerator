@@ -24,10 +24,6 @@ internal static class BindingContextParser
         if (ctx.TargetSymbol is not INamedTypeSymbol classSymbol)
             return null;
 
-        // Must derive from CommandLineBindingContext
-        if (!DerivesFrom(classSymbol, AttributeNames.CommandLineBindingContext))
-            return null;
-
         // Extract naming convention
         NamingConvention namingConvention = NamingConvention.KebabCase;
         foreach (AttributeData attr in classSymbol.GetAttributes())
@@ -78,17 +74,5 @@ internal static class BindingContextParser
         string ns = classSymbol.ContainingNamespace.ToDisplayString();
 
         return new BindingContextInfo(ns, classSymbol.Name, namingConvention, [.. bindableTypes]);
-    }
-
-    private static bool DerivesFrom(INamedTypeSymbol symbol, string baseTypeFullName)
-    {
-        INamedTypeSymbol? current = symbol.BaseType;
-        while (current is not null)
-        {
-            if (current.ToDisplayString() == baseTypeFullName)
-                return true;
-            current = current.BaseType;
-        }
-        return false;
     }
 }
