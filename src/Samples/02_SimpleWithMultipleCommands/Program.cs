@@ -4,7 +4,7 @@
 using System.CommandLine;
 using CommandLineGenerator;
 
-RootCommand rootCommand = new RootCommand();
+RootCommand rootCommand = [];
 rootCommand.AddOptions<RootCommandOptions>();
 rootCommand.SetAction(parseResult =>
 {
