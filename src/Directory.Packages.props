@@ -6,7 +6,6 @@
     <PackageVersion Include="CSharpier.MSBuild" Version="1.2.6" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
-
     <PackageVersion Include="StaticCS.IndentingBuilder" Version="0.3.0" />
     <PackageVersion Include="System.CommandLine" Version="2.0.2" />
   </ItemGroup>
