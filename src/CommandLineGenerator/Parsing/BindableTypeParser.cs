@@ -200,23 +200,40 @@ internal static class BindableTypeParser
         ImmutableArray<AttributeData> attributes
     )
     {
+        // Look for CustomParser/CustomParserMethod named properties on
+        // [CommandLineOption] or [CommandLineArgument] attributes.
         AttributeData? attr = attributes.FirstOrDefault(a =>
-            a.AttributeClass?.ToDisplayString() == AttributeNames.CommandLineCustomParser
-        );
+        {
+            string? name = a.AttributeClass?.ToDisplayString();
+            return name == AttributeNames.CommandLineOption
+                || name == AttributeNames.CommandLineArgument;
+        });
 
-        if (attr is null || attr.ConstructorArguments.Length < 2)
+        if (attr is null)
             return (null, null);
 
-        if (
-            attr.ConstructorArguments[0].Value is INamedTypeSymbol parserType
-            && attr.ConstructorArguments[1].Value is string methodName
-        )
+        INamedTypeSymbol? parserType = null;
+        string? methodName = null;
+
+        foreach (KeyValuePair<string, TypedConstant> namedArg in attr.NamedArguments)
         {
-            string ns = parserType.ContainingNamespace.ToDisplayString();
-            string fullTypeName = Utilities.GetFullyQualifiedName(ns, parserType.Name);
-            return (fullTypeName, methodName);
+            if (namedArg.Key == "CustomParser" && namedArg.Value.Value is INamedTypeSymbol type)
+            {
+                parserType = type;
+            }
+            else if (namedArg.Key == "CustomParserMethod" && namedArg.Value.Value is string method)
+            {
+                methodName = method;
+            }
         }
 
-        return (null, null);
+        if (parserType is null)
+            return (null, null);
+
+        string ns = parserType.ContainingNamespace.ToDisplayString();
+        string fullTypeName = Utilities.GetFullyQualifiedName(ns, parserType.Name);
+
+        // Default method name to "Parse" when not explicitly specified
+        return (fullTypeName, methodName ?? "Parse");
     }
 }

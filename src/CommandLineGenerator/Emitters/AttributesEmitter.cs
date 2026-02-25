@@ -60,6 +60,18 @@ internal static class AttributesEmitter
             [global::System.AttributeUsage(global::System.AttributeTargets.Property | global::System.AttributeTargets.Parameter, Inherited = false, AllowMultiple = false)]
             internal sealed class {{AttributeNames.CommandLineOptionClass}} : global::System.Attribute
             {
+                /// <summary>
+                /// A type containing a static parser method for this option.
+                /// When set, the generator uses the method to convert the raw string token to the target type.
+                /// If <see cref="CustomParserMethod"/> is not set, the method must be named <c>Parse</c>.
+                /// </summary>
+                public global::System.Type? CustomParser { get; set; }
+
+                /// <summary>
+                /// The name of the static parser method on <see cref="CustomParser"/>.
+                /// Defaults to <c>"Parse"</c> when not specified.
+                /// </summary>
+                public string? CustomParserMethod { get; set; }
             }
 
             /// <summary>
@@ -68,6 +80,18 @@ internal static class AttributesEmitter
             [global::System.AttributeUsage(global::System.AttributeTargets.Property | global::System.AttributeTargets.Parameter, Inherited = false, AllowMultiple = false)]
             internal sealed class {{AttributeNames.CommandLineArgumentClass}} : global::System.Attribute
             {
+                /// <summary>
+                /// A type containing a static parser method for this argument.
+                /// When set, the generator uses the method to convert the raw string token to the target type.
+                /// If <see cref="CustomParserMethod"/> is not set, the method must be named <c>Parse</c>.
+                /// </summary>
+                public global::System.Type? CustomParser { get; set; }
+
+                /// <summary>
+                /// The name of the static parser method on <see cref="CustomParser"/>.
+                /// Defaults to <c>"Parse"</c> when not specified.
+                /// </summary>
+                public string? CustomParserMethod { get; set; }
             }
 
             /// <summary>
@@ -106,26 +130,6 @@ internal static class AttributesEmitter
 
                 /// <summary>The command name. Empty string indicates the root command.</summary>
                 public string Name { get; }
-            }
-
-            /// <summary>
-            /// Specifies a custom parser for a command-line option or argument.
-            /// The referenced method must be a static method with signature <c>static T MethodName(string value)</c>.
-            /// </summary>
-            [global::System.AttributeUsage(global::System.AttributeTargets.Property | global::System.AttributeTargets.Parameter, Inherited = false, AllowMultiple = false)]
-            internal sealed class {{AttributeNames.CommandLineCustomParserClass}} : global::System.Attribute
-            {
-                public {{AttributeNames.CommandLineCustomParserClass}}(global::System.Type parserType, string methodName)
-                {
-                    ParserType = parserType;
-                    MethodName = methodName;
-                }
-
-                /// <summary>The type containing the static parser method.</summary>
-                public global::System.Type ParserType { get; }
-
-                /// <summary>The name of the static parser method.</summary>
-                public string MethodName { get; }
             }
             """;
     }

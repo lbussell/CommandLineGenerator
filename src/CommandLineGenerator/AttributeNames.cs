@@ -30,7 +30,4 @@ internal static class AttributeNames
 
     public const string CommandClass = "CommandAttribute";
     public const string Command = Ns + "." + CommandClass;
-
-    public const string CommandLineCustomParserClass = "CommandLineCustomParserAttribute";
-    public const string CommandLineCustomParser = Ns + "." + CommandLineCustomParserClass;
 }
