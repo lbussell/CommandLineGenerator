@@ -114,6 +114,8 @@ internal static class BindableTypeParser
         bool isNullable = param.NullableAnnotation == NullableAnnotation.Annotated;
         bool isValueType = param.Type.IsValueType;
 
+        (string? customParserType, string? customParserMethod) = ExtractCustomParser(attributes);
+
         return new MemberInfo(
             param.Name,
             param.Type.ToDisplayString(),
@@ -125,7 +127,9 @@ internal static class BindableTypeParser
             param.HasExplicitDefaultValue
                 ? Utilities.FormatDefaultValue(param.ExplicitDefaultValue, param.Type)
                 : null,
-            isValueType
+            isValueType,
+            customParserType,
+            customParserMethod
         );
     }
 
@@ -154,6 +158,8 @@ internal static class BindableTypeParser
         // Detect property initializers via syntax (e.g. = "Default value")
         (bool hasDefault, string? defaultValue) = GetPropertyDefault(prop, ct);
 
+        (string? customParserType, string? customParserMethod) = ExtractCustomParser(attributes);
+
         return new MemberInfo(
             prop.Name,
             prop.Type.ToDisplayString(),
@@ -163,7 +169,9 @@ internal static class BindableTypeParser
             isNullable,
             hasDefault,
             defaultValue,
-            isValueType
+            isValueType,
+            customParserType,
+            customParserMethod
         );
     }
 
@@ -186,5 +194,29 @@ internal static class BindableTypeParser
             }
         }
         return (false, null);
+    }
+
+    private static (string? TypeName, string? MethodName) ExtractCustomParser(
+        ImmutableArray<AttributeData> attributes
+    )
+    {
+        AttributeData? attr = attributes.FirstOrDefault(a =>
+            a.AttributeClass?.ToDisplayString() == AttributeNames.CommandLineCustomParser
+        );
+
+        if (attr is null || attr.ConstructorArguments.Length < 2)
+            return (null, null);
+
+        if (
+            attr.ConstructorArguments[0].Value is INamedTypeSymbol parserType
+            && attr.ConstructorArguments[1].Value is string methodName
+        )
+        {
+            string ns = parserType.ContainingNamespace.ToDisplayString();
+            string fullTypeName = Utilities.GetFullyQualifiedName(ns, parserType.Name);
+            return (fullTypeName, methodName);
+        }
+
+        return (null, null);
     }
 }

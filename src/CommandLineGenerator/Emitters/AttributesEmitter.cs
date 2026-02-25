@@ -107,6 +107,26 @@ internal static class AttributesEmitter
                 /// <summary>The command name. Empty string indicates the root command.</summary>
                 public string Name { get; }
             }
+
+            /// <summary>
+            /// Specifies a custom parser for a command-line option or argument.
+            /// The referenced method must be a static method with signature <c>static T MethodName(string value)</c>.
+            /// </summary>
+            [global::System.AttributeUsage(global::System.AttributeTargets.Property | global::System.AttributeTargets.Parameter, Inherited = false, AllowMultiple = false)]
+            internal sealed class {{AttributeNames.CommandLineCustomParserClass}} : global::System.Attribute
+            {
+                public {{AttributeNames.CommandLineCustomParserClass}}(global::System.Type parserType, string methodName)
+                {
+                    ParserType = parserType;
+                    MethodName = methodName;
+                }
+
+                /// <summary>The type containing the static parser method.</summary>
+                public global::System.Type ParserType { get; }
+
+                /// <summary>The name of the static parser method.</summary>
+                public string MethodName { get; }
+            }
             """;
     }
 }

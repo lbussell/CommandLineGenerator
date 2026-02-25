@@ -52,7 +52,9 @@ internal sealed record MemberInfo(
     bool IsNullable,
     bool HasDefaultValue,
     string? DefaultValue,
-    bool IsValueType
+    bool IsValueType,
+    string? CustomParserTypeName = null,
+    string? CustomParserMethodName = null
 );
 
 /// <summary>

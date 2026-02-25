@@ -230,7 +230,11 @@ internal static class BindingContextEmitter
         string fieldName
     )
     {
-        if (member.HasDefaultValue)
+        if (member.CustomParserTypeName is not null)
+        {
+            EmitFieldWithCustomParser(builder, member, fieldName, isArgument: true);
+        }
+        else if (member.HasDefaultValue)
         {
             builder.AppendLine(
                 $"internal static readonly Argument<{member.TypeName}> {fieldName} = new Argument<{member.TypeName}>(\"{member.CliName}\") {{ DefaultValueFactory = _ => {member.DefaultValue} }};"
@@ -252,7 +256,11 @@ internal static class BindingContextEmitter
     {
         string optName = $"--{member.CliName}";
 
-        if (member.IsBoolean)
+        if (member.CustomParserTypeName is not null)
+        {
+            EmitFieldWithCustomParser(builder, member, fieldName, isArgument: false);
+        }
+        else if (member.IsBoolean)
         {
             builder.AppendLine(
                 $"internal static readonly Option<bool> {fieldName} = new Option<bool>(\"{optName}\") {{ Arity = ArgumentArity.Zero }};"
@@ -270,6 +278,52 @@ internal static class BindingContextEmitter
                 $"internal static readonly Option<{member.TypeName}> {fieldName} = new Option<{member.TypeName}>(\"{optName}\"){((!member.IsNullable) ? " { Required = true }" : "")};"
             );
         }
+    }
+
+    private static void EmitFieldWithCustomParser(
+        IndentingBuilder builder,
+        MemberInfo member,
+        string fieldName,
+        bool isArgument
+    )
+    {
+        string symbolType = isArgument ? "Argument" : "Option";
+        string name = isArgument ? member.CliName : $"--{member.CliName}";
+        string parserCall =
+            $"{member.CustomParserTypeName}.{member.CustomParserMethodName}(result.Tokens[0].Value)";
+
+        builder.AppendLine(
+            $"internal static readonly {symbolType}<{member.TypeName}> {fieldName} = new {symbolType}<{member.TypeName}>(\"{name}\")"
+        );
+        builder.AppendLine("{");
+        builder.Indent();
+
+        if (!isArgument && !member.IsNullable)
+        {
+            builder.AppendLine("Required = true,");
+        }
+
+        builder.AppendLine("CustomParser = result =>");
+        builder.AppendLine("{");
+        builder.Indent();
+        builder.AppendLine("try");
+        builder.AppendLine("{");
+        builder.Indent();
+        builder.AppendLine($"return {parserCall};");
+        builder.Dedent();
+        builder.AppendLine("}");
+        builder.AppendLine("catch (Exception ex)");
+        builder.AppendLine("{");
+        builder.Indent();
+        builder.AppendLine("result.AddError(ex.Message);");
+        builder.AppendLine($"return default!;");
+        builder.Dedent();
+        builder.AppendLine("}");
+        builder.Dedent();
+        builder.AppendLine("}");
+
+        builder.Dedent();
+        builder.AppendLine("};");
     }
 
     private static string GetSymbolFieldName(BindableTypeInfo type, MemberInfo member)
