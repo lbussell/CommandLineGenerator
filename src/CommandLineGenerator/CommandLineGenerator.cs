@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 Logan Bussell
 // SPDX-License-Identifier: MIT
 
+using System.Collections.Immutable;
 using System.Text;
 using CommandLineGenerator.Emitters;
 using CommandLineGenerator.Parsing;
@@ -48,6 +49,57 @@ public sealed class CommandLineGenerator : IIncrementalGenerator
                 {
                     string source = BindingContextEmitter.Emit(ctx);
                     spc.AddSource($"{ctx.ClassName}.g.cs", SourceText.From(source, Encoding.UTF8));
+                }
+            }
+        );
+
+        // Discover command classes with [CommandLineHandler]
+        IncrementalValuesProvider<CommandHandlerInfo> commandHandlers = context
+            .SyntaxProvider.ForAttributeWithMetadataName(
+                AttributeNames.CommandLineHandler,
+                predicate: static (node, _) => node is ClassDeclarationSyntax,
+                transform: static (ctx, ct) => CommandHandlerParser.Parse(ctx, ct)
+            )
+            .Where(static c => c is not null)!;
+
+        // Collect all handlers, group by binding context, and emit one file per context
+        IncrementalValueProvider<ImmutableArray<CommandHandlerInfo>> allHandlers =
+            commandHandlers.Collect();
+
+        context.RegisterSourceOutput(
+            allHandlers,
+            static (spc, handlers) =>
+            {
+                if (handlers.IsEmpty)
+                    return;
+
+                // Group handlers by their binding context
+                var groups = new Dictionary<string, List<CommandHandlerInfo>>();
+                foreach (CommandHandlerInfo handler in handlers)
+                {
+                    string key = $"{handler.ContextNamespace}.{handler.ContextClassName}";
+                    if (!groups.TryGetValue(key, out List<CommandHandlerInfo>? list))
+                    {
+                        list = [];
+                        groups[key] = list;
+                    }
+                    list.Add(handler);
+                }
+
+                foreach (KeyValuePair<string, List<CommandHandlerInfo>> group in groups)
+                {
+                    CommandHandlerInfo first = group.Value[0];
+                    HandlerContextInfo contextInfo = new HandlerContextInfo(
+                        first.ContextNamespace,
+                        first.ContextClassName,
+                        [.. group.Value]
+                    );
+
+                    string source = CommandHandlerEmitter.Emit(contextInfo);
+                    spc.AddSource(
+                        $"{contextInfo.ClassName}Handlers.g.cs",
+                        SourceText.From(source, Encoding.UTF8)
+                    );
                 }
             }
         );

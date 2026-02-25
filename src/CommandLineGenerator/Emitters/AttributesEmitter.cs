@@ -77,6 +77,29 @@ internal static class AttributesEmitter
             internal sealed class {{AttributeNames.CommandLineIgnoreClass}} : global::System.Attribute
             {
             }
+
+            /// <summary>
+            /// Marks a class as a command handler for hosting with dependency injection.
+            /// The generator discovers these classes and generates wiring code.
+            /// </summary>
+            [global::System.AttributeUsage(global::System.AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
+            internal sealed class {{AttributeNames.CommandLineHandlerClass}} : global::System.Attribute
+            {
+                /// <summary>The binding context class that provides Parse and AddOptions methods.</summary>
+                public global::System.Type? BindingContext { get; set; }
+            }
+
+            /// <summary>
+            /// Marks a method as a command handler entry point, optionally with a command name.
+            /// </summary>
+            [global::System.AttributeUsage(global::System.AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
+            internal sealed class {{AttributeNames.CommandClass}} : global::System.Attribute
+            {
+                public {{AttributeNames.CommandClass}}(string name = "") => Name = name;
+
+                /// <summary>The command name. Empty string indicates the root command.</summary>
+                public string Name { get; }
+            }
             """;
     }
 }

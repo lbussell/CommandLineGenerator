@@ -54,3 +54,31 @@ internal sealed record MemberInfo(
     string? DefaultValue,
     bool IsValueType
 );
+
+/// <summary>
+/// Represents metadata about a command handler class decorated with
+/// <c>[CommandLineHandler]</c>.
+/// </summary>
+internal sealed record CommandHandlerInfo(
+    string TypeName,
+    string FullTypeName,
+    string MethodName,
+    string CommandName,
+    string OptionsTypeName,
+    string OptionsFullTypeName,
+    bool IsAsync,
+    bool ReturnsExitCode,
+    bool AcceptsCancellationToken,
+    string ContextClassName,
+    string ContextNamespace
+);
+
+/// <summary>
+/// Represents a group of command handlers that share the same binding context,
+/// used to generate a single extensions class with <c>Add&lt;T&gt;</c>.
+/// </summary>
+internal sealed record HandlerContextInfo(
+    string Namespace,
+    string ClassName,
+    ImmutableArray<CommandHandlerInfo> Handlers
+);

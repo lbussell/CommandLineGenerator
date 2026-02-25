@@ -24,4 +24,10 @@ internal static class AttributeNames
 
     public const string CommandLineIgnoreClass = "CommandLineIgnoreAttribute";
     public const string CommandLineIgnore = Ns + "." + CommandLineIgnoreClass;
+
+    public const string CommandLineHandlerClass = "CommandLineHandlerAttribute";
+    public const string CommandLineHandler = Ns + "." + CommandLineHandlerClass;
+
+    public const string CommandClass = "CommandAttribute";
+    public const string Command = Ns + "." + CommandClass;
 }
