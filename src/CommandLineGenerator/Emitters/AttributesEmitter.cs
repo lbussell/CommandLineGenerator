@@ -85,6 +85,13 @@ internal static class AttributesEmitter
             [global::System.AttributeUsage(global::System.AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
             internal sealed class {{AttributeNames.CommandLineHandlerClass}} : global::System.Attribute
             {
+                public {{AttributeNames.CommandLineHandlerClass}}() { }
+
+                public {{AttributeNames.CommandLineHandlerClass}}(string groupName) => GroupName = groupName;
+
+                /// <summary>The command group name. When set, methods become subcommands of this group.</summary>
+                public string GroupName { get; } = "";
+
                 /// <summary>The binding context class that provides Parse and AddOptions methods.</summary>
                 public global::System.Type? BindingContext { get; set; }
             }

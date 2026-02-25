@@ -56,19 +56,29 @@ internal sealed record MemberInfo(
 );
 
 /// <summary>
+/// Represents metadata about a single <c>[Command]</c>-decorated method
+/// within a command handler class.
+/// </summary>
+internal sealed record CommandMethodInfo(
+    string MethodName,
+    string CommandName,
+    string? OptionsTypeName,
+    string? OptionsFullTypeName,
+    bool IsAsync,
+    bool ReturnsExitCode,
+    bool AcceptsCancellationToken
+);
+
+/// <summary>
 /// Represents metadata about a command handler class decorated with
-/// <c>[CommandLineHandler]</c>.
+/// <c>[CommandLineHandler]</c>. A handler class may contain multiple
+/// <c>[Command]</c>-decorated methods forming a command group.
 /// </summary>
 internal sealed record CommandHandlerInfo(
     string TypeName,
     string FullTypeName,
-    string MethodName,
-    string CommandName,
-    string OptionsTypeName,
-    string OptionsFullTypeName,
-    bool IsAsync,
-    bool ReturnsExitCode,
-    bool AcceptsCancellationToken,
+    string GroupName,
+    ImmutableArray<CommandMethodInfo> Commands,
     string ContextClassName,
     string ContextNamespace
 );

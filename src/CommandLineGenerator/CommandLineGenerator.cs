@@ -74,7 +74,8 @@ public sealed class CommandLineGenerator : IIncrementalGenerator
                     return;
 
                 // Group handlers by their binding context
-                var groups = new Dictionary<string, List<CommandHandlerInfo>>();
+                Dictionary<string, List<CommandHandlerInfo>> groups =
+                    new Dictionary<string, List<CommandHandlerInfo>>();
                 foreach (CommandHandlerInfo handler in handlers)
                 {
                     string key = $"{handler.ContextNamespace}.{handler.ContextClassName}";

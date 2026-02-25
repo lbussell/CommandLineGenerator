@@ -4,6 +4,7 @@
     <Project Path="src/Samples/02_SimpleWithMultipleCommands/SimpleWithMultipleCommands.csproj" />
     <Project Path="src/Samples/03_Hosting/Hosting.csproj" />
     <Project Path="src/Samples/04_HostingDependencyInjection/HostingDependencyInjection.csproj" />
+    <Project Path="src/Samples/05_CommandGroups/CommandGroups.csproj" />
   </Folder>
   <Project Path="src/CommandLineGenerator/CommandLineGenerator.csproj" />
   <Project Path="src/CommandLineHosting/CommandLineHosting.csproj" />

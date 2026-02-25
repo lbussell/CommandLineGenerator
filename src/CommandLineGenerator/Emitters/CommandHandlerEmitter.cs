@@ -47,11 +47,14 @@ internal static class CommandHandlerEmitter
 
         EmitAddMethod(builder, context, contextRef);
 
-        // Emit action classes for each handler
+        // Emit action classes for each handler's methods
         foreach (CommandHandlerInfo handler in context.Handlers)
         {
-            builder.AppendLine("");
-            EmitActionClass(builder, handler, contextRef);
+            foreach (CommandMethodInfo cmd in handler.Commands)
+            {
+                builder.AppendLine("");
+                EmitActionClass(builder, handler, cmd, contextRef);
+            }
         }
 
         builder.Dedent();
@@ -74,17 +77,21 @@ internal static class CommandHandlerEmitter
         {
             CommandHandlerInfo handler = context.Handlers[i];
             string prefix = i == 0 ? "if" : "else if";
-            string actionClassName = $"{handler.TypeName}Action";
 
             builder.AppendLine($"{prefix} (typeof(T) == typeof({handler.FullTypeName}))");
             builder.AppendLine("{");
             builder.Indent();
 
             builder.AppendLine($"builder.Services.AddSingleton<{handler.FullTypeName}>();");
-            builder.AppendLine("RootCommand rootCommand = new RootCommand();");
-            builder.AppendLine($"rootCommand.AddOptions<{handler.OptionsFullTypeName}>();");
-            builder.AppendLine($"rootCommand.Action = new {actionClassName}();");
-            builder.AppendLine("builder.AddRootCommand(rootCommand);");
+
+            if (string.IsNullOrEmpty(handler.GroupName))
+            {
+                EmitUngroupedHandler(builder, handler);
+            }
+            else
+            {
+                EmitGroupedHandler(builder, handler);
+            }
 
             builder.Dedent();
             builder.AppendLine("}");
@@ -103,13 +110,72 @@ internal static class CommandHandlerEmitter
         builder.AppendLine("}");
     }
 
+    /// <summary>
+    /// Emits wiring for a handler with no group name — single root command.
+    /// </summary>
+    private static void EmitUngroupedHandler(IndentingBuilder builder, CommandHandlerInfo handler)
+    {
+        // Should have exactly one command method
+        CommandMethodInfo cmd = handler.Commands[0];
+        string actionClassName = GetActionClassName(handler, cmd);
+
+        builder.AppendLine("RootCommand rootCommand = new RootCommand();");
+        if (cmd.OptionsFullTypeName is not null)
+        {
+            builder.AppendLine($"rootCommand.AddOptions<{cmd.OptionsFullTypeName}>();");
+        }
+        builder.AppendLine($"rootCommand.Action = new {actionClassName}();");
+        builder.AppendLine("builder.AddRootCommand(rootCommand);");
+    }
+
+    /// <summary>
+    /// Emits wiring for a handler with a group name — named command with subcommands.
+    /// </summary>
+    private static void EmitGroupedHandler(IndentingBuilder builder, CommandHandlerInfo handler)
+    {
+        string groupVar = "groupCommand";
+        builder.AppendLine($"Command {groupVar} = new Command(\"{handler.GroupName}\");");
+
+        foreach (CommandMethodInfo cmd in handler.Commands)
+        {
+            string actionClassName = GetActionClassName(handler, cmd);
+
+            if (string.IsNullOrEmpty(cmd.CommandName))
+            {
+                // [Command] with no name — action on the group command itself
+                if (cmd.OptionsFullTypeName is not null)
+                {
+                    builder.AppendLine($"{groupVar}.AddOptions<{cmd.OptionsFullTypeName}>();");
+                }
+                builder.AppendLine($"{groupVar}.Action = new {actionClassName}();");
+            }
+            else
+            {
+                // [Command("name")] — subcommand
+                string subVar = $"{cmd.CommandName}Command";
+                builder.AppendLine($"Command {subVar} = new Command(\"{cmd.CommandName}\");");
+                if (cmd.OptionsFullTypeName is not null)
+                {
+                    builder.AppendLine($"{subVar}.AddOptions<{cmd.OptionsFullTypeName}>();");
+                }
+                builder.AppendLine($"{subVar}.Action = new {actionClassName}();");
+                builder.AppendLine($"{groupVar}.Add({subVar});");
+            }
+        }
+
+        builder.AppendLine("RootCommand rootCommand = new RootCommand();");
+        builder.AppendLine($"rootCommand.Add({groupVar});");
+        builder.AppendLine("builder.AddRootCommand(rootCommand);");
+    }
+
     private static void EmitActionClass(
         IndentingBuilder builder,
         CommandHandlerInfo handler,
+        CommandMethodInfo cmd,
         string contextRef
     )
     {
-        string actionClassName = $"{handler.TypeName}Action";
+        string actionClassName = GetActionClassName(handler, cmd);
 
         builder.AppendLine(
             $"private sealed class {actionClassName} : AsynchronousCommandLineAction"
@@ -118,7 +184,7 @@ internal static class CommandHandlerEmitter
         builder.Indent();
 
         // InvokeAsync method
-        if (handler.IsAsync)
+        if (cmd.IsAsync)
         {
             builder.AppendLine(
                 "public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)"
@@ -133,43 +199,49 @@ internal static class CommandHandlerEmitter
         builder.AppendLine("{");
         builder.Indent();
 
-        // Resolve service provider from InvocationConfiguration
+        // Resolve service provider and command instance
         builder.AppendLine(
             "CommandLineHostConfiguration config = (CommandLineHostConfiguration)parseResult.InvocationConfiguration;"
         );
         builder.AppendLine(
             $"{handler.FullTypeName} command = config.ServiceProvider.GetRequiredService<{handler.FullTypeName}>();"
         );
-        builder.AppendLine(
-            $"{handler.OptionsFullTypeName} options = {contextRef}.Parse<{handler.OptionsFullTypeName}>(parseResult);"
-        );
+
+        // Parse options if the method takes a parameter
+        bool hasOptions = cmd.OptionsFullTypeName is not null;
+        if (hasOptions)
+        {
+            builder.AppendLine(
+                $"{cmd.OptionsFullTypeName} options = {contextRef}.Parse<{cmd.OptionsFullTypeName}>(parseResult);"
+            );
+        }
 
         // Build method call arguments
-        string ctArg = handler.AcceptsCancellationToken ? ", cancellationToken" : "";
+        string optionsArg = hasOptions ? "options" : "";
+        string ctArg = cmd.AcceptsCancellationToken
+            ? (hasOptions ? ", cancellationToken" : "cancellationToken")
+            : "";
+        string args = $"{optionsArg}{ctArg}";
 
         // Invoke the handler method based on return type
-        if (handler.IsAsync && handler.ReturnsExitCode)
+        if (cmd.IsAsync && cmd.ReturnsExitCode)
         {
             builder.AppendLine(
-                $"return await command.{handler.MethodName}(options{ctArg}).ConfigureAwait(false);"
+                $"return await command.{cmd.MethodName}({args}).ConfigureAwait(false);"
             );
         }
-        else if (handler.IsAsync)
+        else if (cmd.IsAsync)
         {
-            builder.AppendLine(
-                $"await command.{handler.MethodName}(options{ctArg}).ConfigureAwait(false);"
-            );
+            builder.AppendLine($"await command.{cmd.MethodName}({args}).ConfigureAwait(false);");
             builder.AppendLine("return 0;");
         }
-        else if (handler.ReturnsExitCode)
+        else if (cmd.ReturnsExitCode)
         {
-            builder.AppendLine(
-                $"return Task.FromResult(command.{handler.MethodName}(options{ctArg}));"
-            );
+            builder.AppendLine($"return Task.FromResult(command.{cmd.MethodName}({args}));");
         }
         else
         {
-            builder.AppendLine($"command.{handler.MethodName}(options{ctArg});");
+            builder.AppendLine($"command.{cmd.MethodName}({args});");
             builder.AppendLine("return Task.FromResult(0);");
         }
 
@@ -178,5 +250,10 @@ internal static class CommandHandlerEmitter
 
         builder.Dedent();
         builder.AppendLine("}");
+    }
+
+    private static string GetActionClassName(CommandHandlerInfo handler, CommandMethodInfo cmd)
+    {
+        return $"{handler.TypeName}{cmd.MethodName}Action";
     }
 }
